@@ -7,4 +7,22 @@ layout: default
 		Imagerator is a project that does things with stuff and the stuff
 		does the big complicated thing to make it happen.
 	</p>
+	<input id="input" type="file" accept="image/*"><br><br>
+	<canvas id="canvas" style="width: 100%;"></canvas>
 </main>
+
+<script>
+	const inputElement = document.getElementById("input");
+	const canvasElement = document.getElementById("canvas");
+
+	const canvasContext = canvasElement.getContext("2d");
+
+	inputElement.addEventListener("change", function(e) {
+		var img = new Image();
+		img.onload = function() {
+			canvasContext.canvas.height = img.height * (canvasContext.canvas.width / img.width);
+			canvasContext.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvasContext.canvas.width, img.height * (canvasContext.canvas.width / img.width));
+		};
+		img.src = URL.createObjectURL(e.target.files[0]);
+	});
+</script>
