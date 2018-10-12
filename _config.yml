@@ -1,0 +1,11 @@
+name: Imagerator
+description: An image generating mess.
+url: https://jfenn.me/imagerator
+baseurl: "/imagerator"
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - LICENSE
+  - README.md
+  - CNAME
