@@ -53,10 +53,30 @@ layout: default
 		img.src = URL.createObjectURL(e.target.files[0]);
 	});
 
+	/**
+	 * This function is called whenever the granularity of the image is updated.
+	 * It should take the origImageData array (an array of 0-255 ints in multiples 
+	 * of four; rgba values), sort them into the amount of "arrays" specified by
+	 * `granularity`, store the average values of said arrays in `colors`, and
+	 * write the "averaged" version of the image data to `granularImageData`,
+	 * passing it to the `canvasContext` as it does so.
+	 */
 	function onGranularityChange() {
 		colors = [];
 		for (let i = 0; i < origImageData.length; i += 4) {
 			colors.push({r: origImageData[i], g: origImageData[i+1], b: origImageData[i+2]});
 		}
+	}
+ 
+	/**
+	 * Calculates the distance between two colors. This is currently the worst
+	 * color distance algorithm possible, and only accounts for rgb values, not
+	 * colors as visible to the human eye. This should be changed in the future.
+	 * 
+	 * @param c1		The first color object.
+	 * @param c2		The second color object.
+	 */
+	function colorDistance(c1, c2) {
+		return Math.abs(c1.r - c2.r) + Math.abs(c1.g - c2.g) + Math.abs(c1.b - c2.b);
 	}
 </script>
