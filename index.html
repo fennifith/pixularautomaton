@@ -8,21 +8,55 @@ layout: default
 		does the big complicated thing to make it happen.
 	</p>
 	<input id="input" type="file" accept="image/*"><br><br>
-	<canvas id="canvas" style="width: 100%;"></canvas>
+	<canvas id="canvas" style="width: 100%;"></canvas><br><br>
+	<div style="display: inline-block;">
+		<h5 style="display: inline;">Granularity</h5><br>
+		<input id="granularity" type="range" min="2" max="500" value="50">
+		<span id="granularityNumber">50</span>
+	</div>
+	<button style="float: right;">Start</button>
 </main>
 
 <script>
 	const inputElement = document.getElementById("input");
 	const canvasElement = document.getElementById("canvas");
+	const granularityElement = document.getElementById("granularity");
+	const granularityNumberElement = document.getElementById("granularityNumber");
 
 	const canvasContext = canvasElement.getContext("2d");
+
+	var granularity = 100;
+	
+	var origImageData = [];
+	var granularImageData = [];
+	var colors = [];
+	var dataMap = {};
+
+	granularityElement.addEventListener("input", function(e) {
+		granularityNumberElement.innerHTML = granularityElement.value;
+	});
+
+	granularityElement.addEventListener("change", function(e) {
+		granularity = granularityElement.value;
+		onGranularityChange();
+	});
 
 	inputElement.addEventListener("change", function(e) {
 		var img = new Image();
 		img.onload = function() {
 			canvasContext.canvas.height = img.height * (canvasContext.canvas.width / img.width);
 			canvasContext.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvasContext.canvas.width, img.height * (canvasContext.canvas.width / img.width));
+
+			origImageData = canvasContext.getImageData(0, 0, canvasContext.canvas.width, canvasContext.canvas.height);
+			onGranularityChange();
 		};
 		img.src = URL.createObjectURL(e.target.files[0]);
 	});
+
+	function onGranularityChange() {
+		colors = [];
+		for (let i = 0; i < origImageData.length; i += 4) {
+			colors.push({r: origImageData[i], g: origImageData[i+1], b: origImageData[i+2]});
+		}
+	}
 </script>
