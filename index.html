@@ -11,10 +11,11 @@ layout: default
 	<canvas id="canvas" style="width: 100%;"></canvas><br><br>
 	<div style="display: inline-block;">
 		<h5 style="display: inline;">Granularity</h5><br>
-		<input id="granularity" type="range" min="2" max="500" value="50">
-		<span id="granularityNumber">50</span>
+		<input id="granularity" type="range" min="2" max="500" value="10">
+		<span id="granularityNumber">10</span>
 	</div>
 	<button style="float: right;">Start</button>
+	<h3>Progress: <span id="progress">Not started...</span></h3>
 </main>
 
 <script>
@@ -22,14 +23,21 @@ layout: default
 	const canvasElement = document.getElementById("canvas");
 	const granularityElement = document.getElementById("granularity");
 	const granularityNumberElement = document.getElementById("granularityNumber");
+	const progressElement = document.getElementById("progress");
 
 	const canvasContext = canvasElement.getContext("2d");
 
-	var granularity = 100;
+	canvasContext.msImageSmoothingEnabled = false;
+	canvasContext.mozImageSmoothingEnabled = false;
+	canvasContext.webkitImageSmoothingEnabled = false;
+	canvasContext.imageSmoothingEnabled = false;
+
+	var granularity = 10;
 	
 	var origImageData = [];
 	var granularImageData = [];
-	var colors = [];
+	var imageHeight = 0;
+	var imageWidth = 0;
 	var dataMap = {};
 
 	granularityElement.addEventListener("input", function(e) {
@@ -47,7 +55,21 @@ layout: default
 			canvasContext.canvas.height = img.height * (canvasContext.canvas.width / img.width);
 			canvasContext.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvasContext.canvas.width, img.height * (canvasContext.canvas.width / img.width));
 
-			origImageData = canvasContext.getImageData(0, 0, canvasContext.canvas.width, canvasContext.canvas.height);
+			let imageData = canvasContext.getImageData(0, 0, canvasContext.canvas.width, canvasContext.canvas.height);
+			origImageData = [];
+			for (let i = 0; i < imageData.data.length; i += 40) {
+				origImageData.push(imageData.data[i]);
+				origImageData.push(imageData.data[i+1]);
+				origImageData.push(imageData.data[i+2]);
+				origImageData.push(255);
+					
+				if (i % (imageData.width * 4) == 0)
+					i += imageData.width * 40;
+			}
+			
+			imageHeight = imageData.height;
+			imageWidth = imageData.width;
+			
 			onGranularityChange();
 		};
 		img.src = URL.createObjectURL(e.target.files[0]);
@@ -61,11 +83,188 @@ layout: default
 	 * write the "averaged" version of the image data to `granularImageData`,
 	 * passing it to the `canvasContext` as it does so.
 	 */
-	function onGranularityChange() {
-		colors = [];
+	async function onGranularityChange() {
+		let totalColors = [];
+		let colors = [];
 		for (let i = 0; i < origImageData.length; i += 4) {
-			colors.push({r: origImageData[i], g: origImageData[i+1], b: origImageData[i+2]});
+			totalColors.push({r: origImageData[i], g: origImageData[i+1], b: origImageData[i+2]});
 		}
+
+		// decide initial colors (start at 0, find the farthest away color, etc)		
+		colors.push(Object.assign({}, totalColors[0])); // shallow copy; as the colors array stores average colors of the whole image,
+														// its color data will be modified, which (if stored in totalColors) would affect
+														// the original image data
+		totalColors[0].taken = true;
+		totalColors[0].owner = 0;
+
+		let progressTotal = granularity;
+		let progress = 1;
+
+		console.log("starting initial heuristic");
+
+		for (let i = 1; i < granularity && i < totalColors.length; i++) {
+			let maxDistance = 0;
+			let color = null;
+			
+			for (let i2 = 0; i2 < totalColors.length; i2++) {
+				let distance = 0;
+				
+				if (!totalColors[i2])
+					continue;
+				
+				if (!totalColors[i2].taken) {
+					for (let i3 = 0; i3 < colors.length; i3++) {
+						distance += colorDistance(colors[i3], totalColors[i2]);
+					}
+
+					distance /= colors.length;
+
+					if (distance > maxDistance) {
+						maxDistance = distance;
+						color = totalColors[i2];
+					}
+				}
+			}
+
+			if (color === null) {
+				break;
+			} else {
+				colors.push(Object.assign({}, color)); // again, shallow copy
+				color.taken = true;
+				color.owner = colors.length - 1;
+			}
+
+			progress++;
+			updateProgress(progress, progressTotal);
+		}
+
+		console.log("categorizing colors");
+
+		let iterations = Math.ceil((totalColors.length - colors.length) / colors.length);
+		progressTotal += iterations;
+
+		// categorize colors into groups
+		for (let i = 0; i < iterations; i++) {
+			for (let i2 = 0; i2 < colors.length; i2++) {
+				let minDistance = null;
+				let color = null;
+
+				// find closest color to color[i2]
+				for (let i3 = 0; i3 < totalColors.length; i3++) {
+					if (!totalColors[i3].taken && totalColors[i3].owner != i2) {
+						let distance = colorDistance(colors[i2], totalColors[i3]);
+						// continue if the current owner of totalColors[i3] is closer
+						if (totalColors[i3].owner && distance > colorDistance(colors[totalColors[i3].owner], totalColors[i3]))
+							continue;
+
+						if (totalColors[i3])
+
+						if (minDistance === null || distance < minDistance) {
+							minDistance = distance;
+							color = totalColors[i3];
+						}
+					}
+				}
+
+				if (color) {
+					let owner = color.owner;
+					color.owner = i2;
+
+					// recalculate average for original owner
+					if (owner) {
+						colors[owner].r = null;
+						colors[owner].b = null;
+						colors[owner].g = null;
+						let count = 0;
+						
+						for (let i3 = 0; i3 < totalColors.length; i3++) {
+							if (totalColors[i3].owner == owner) {
+								if (colors[owner].r)
+									colors[owner].r = ((colors[owner].r * count) + totalColors[i3].r) / (count + 1);
+								else colors[owner].r = totalColors[i3].r;
+
+								if (colors[owner].g)
+									colors[owner].g = ((colors[owner].g * count) + totalColors[i3].g) / (count + 1);
+								else colors[owner].g = totalColors[i3].g;
+
+								if (colors[owner].b)
+									colors[owner].b = ((colors[owner].b * count) + totalColors[i3].b) / (count + 1);
+								else colors[owner].b = totalColors[i3].b;
+								
+								count++;
+							}
+						}
+					}
+
+					// recalculate average for colors[i2]
+					colors[i2].r = null;
+					colors[i2].g = null;
+					colors[i2].b = null;					
+					let count = 0;
+					
+					for (let i3 = 0; i3 < totalColors.length; i3++) {
+						if (totalColors[i3].owner == i2) {
+							if (colors[i2].r)
+								colors[i2].r = ((colors[i2].r * count) + totalColors[i3].r) / (count + 1);
+							else colors[i2].r = totalColors[i3].r;
+
+							if (colors[i2].g)
+								colors[i2].g = ((colors[i2].g * count) + totalColors[i3].g) / (count + 1);
+							else colors[i2].g = totalColors[i3].g;
+
+							if (colors[i2].b)
+								colors[i2].b = ((colors[i2].b * count) + totalColors[i3].b) / (count + 1);
+							else colors[i2].b = totalColors[i3].b;
+								
+							count++;
+						}
+					}							
+				}
+			}
+
+			progress++;
+			updateProgress(progress, progressTotal);
+			await sleep(10);
+		}
+
+		console.log("forming final image");
+		progressTotal += totalColors.length * 4;
+
+		// form (& set) granular image data for canvas
+		let imageData = canvasContext.createImageData(imageWidth, imageHeight);
+		granularImageData = imageData.data;
+		for (let i = 0; i < totalColors.length * 4; i += 4) {
+			let color = null;
+			if (totalColors[i] && totalColors[i].owner) {
+				color = colors[totalColors[i].owner];
+			} else {
+				console.error("Color without an owner at index " + i + "!");
+				color = totalColors[i];				
+			}
+
+			if (!color)
+				color = { r: 0, g: 0, b: 0 };
+
+			for (let x = 0; x < 40; x += 4) {
+				for (let y = 0; y < 40; y += 4) {
+					let pos = i + x + (y * imageWidth);
+					granularImageData[pos  ] = color.r;
+					granularImageData[pos+1] = color.g;
+					granularImageData[pos+2] = color.b;
+					granularImageData[pos+3] = 255;
+				}
+			}
+
+			progress++;
+			updateProgress(progress, progressTotal);
+			await sleep(10);
+		}
+		canvasContext.putImageData(imageData, 0, 0);
+
+		progress = progressTotal;
+		updateProgress(progress, progressTotal);
+
+		// TODO: generate 2d data set for use in actual iterations
 	}
  
 	/**
@@ -78,5 +277,15 @@ layout: default
 	 */
 	function colorDistance(c1, c2) {
 		return Math.abs(c1.r - c2.r) + Math.abs(c1.g - c2.g) + Math.abs(c1.b - c2.b);
+	}
+
+	function updateProgress(progress, total) {
+		progressElement.innerHTML = Math.round(progress * 100 / total) + "%";
+	}
+
+	function sleep(duration) {
+		return new Promise(function(resolve) {
+			setTimeout(resolve, duration);
+		});
 	}
 </script>
