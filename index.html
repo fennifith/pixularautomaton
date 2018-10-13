@@ -8,13 +8,18 @@ layout: default
 		does the big complicated thing to make it happen.
 	</p>
 	<input id="input" type="file" accept="image/*"><br><br>
-	<canvas id="canvas" style="width: 100%;"></canvas><br><br>
 	<div style="display: inline-block;">
 		<h5 style="display: inline;">Granularity</h5><br>
 		<input id="granularity" type="range" min="2" max="100" value="10">
 		<span id="granularityNumber">10</span>
+	</div>&nbsp;&nbsp;
+	<div style="display: inline-block;">
+		<h5 style="display: inline;">Pixelation</h5><br>
+		<input id="pixels" type="range" min="2" max="10" value="4">
+		<span id="pixelsNumber">4</span>
 	</div>
-	<button id="start" style="float: right;">Start</button>
+	<button id="start" style="float: right;">Start</button><br><br>
+	<canvas id="canvas" style="width: 100%;"></canvas>
 </main>
 
 <script>
@@ -22,6 +27,8 @@ layout: default
 	const _canvasElement = document.getElementById("canvas");
 	const _granularityElement = document.getElementById("granularity");
 	const _granularityNumberElement = document.getElementById("granularityNumber");
+	const _pixelsElement = document.getElementById("pixels");
+	const _pixelsNumberElement = document.getElementById("pixelsNumber");
 	const _startElement = document.getElementById("start");
 
 	const _canvasContext = _canvasElement.getContext("2d");
@@ -31,8 +38,10 @@ layout: default
 	_canvasContext.webkitImageSmoothingEnabled = false;
 	_canvasContext.imageSmoothingEnabled = false;
 
-	var _pixelRatio = 3;
+	var _pixelRatio = 4;
 	var _granularity = 10;
+
+	var _inputImageData;
 
 	var _colors = [];
 	var _origImageData = [];
@@ -50,30 +59,44 @@ layout: default
 		onGranularityChange();
 	});
 
+	_pixelsElement.addEventListener("input", function(e) {
+		_pixelsNumberElement.innerHTML = _pixelsElement.value;
+	});
+
+	_pixelsElement.addEventListener("change", function(e) {
+		_pixelRatio = _pixelsElement.value;
+		if (_inputImageData)
+			scaleInputImage(_inputImageData);
+	});
+
 	_inputElement.addEventListener("change", function(e) {
 		var img = new Image();
 		img.onload = function() {
 			_canvasContext.canvas.height = img.height * (_canvasContext.canvas.width / img.width);
 			_canvasContext.drawImage(img, 0, 0, img.width, img.height, 0, 0, _canvasContext.canvas.width, img.height * (_canvasContext.canvas.width / img.width));
 
-			let imageData = _canvasContext.getImageData(0, 0, _canvasContext.canvas.width, _canvasContext.canvas.height);
-			_origImageData = [];
-			for (let i = 0; i < imageData.data.length; i += imageData.width * 4 * _pixelRatio * _pixelRatio) {
-				for (let i2 = i; i2 < i + (imageData.width * 4 * _pixelRatio); i2 += 4 * _pixelRatio) {
-					_origImageData.push(imageData.data[i2]);
-					_origImageData.push(imageData.data[i2+1]);
-					_origImageData.push(imageData.data[i2+2]);
-					_origImageData.push(255);
-				}
-			}
-			
-			_imageHeight = imageData.height;
-			_imageWidth = imageData.width;
-			
-			onGranularityChange();
+			_inputImageData = _canvasContext.getImageData(0, 0, _canvasContext.canvas.width, _canvasContext.canvas.height);
+			scaleInputImage(_inputImageData);
 		};
 		img.src = URL.createObjectURL(e.target.files[0]);
 	});
+
+	function scaleInputImage(imageData) {
+		_origImageData = [];
+		for (let i = 0; i < imageData.data.length; i += imageData.width * 4 * _pixelRatio * _pixelRatio) {
+			for (let i2 = i; i2 < i + (imageData.width * 4 * _pixelRatio); i2 += 4 * _pixelRatio) {
+				_origImageData.push(imageData.data[i2]);
+				_origImageData.push(imageData.data[i2+1]);
+				_origImageData.push(imageData.data[i2+2]);
+				_origImageData.push(255);
+			}
+		}
+			
+		_imageHeight = imageData.height;
+		_imageWidth = imageData.width;
+
+		onGranularityChange();
+	}
 
 	/**
 	 * This function is called whenever the granularity of the image is updated.
