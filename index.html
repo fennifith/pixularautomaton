@@ -18,14 +18,14 @@ layout: default
 		<input id="pixels" type="range" min="2" max="10" value="4">
 		<span id="pixelsNumber">4</span>
 	</div>
-	<button id="start" style="float: right;">Start</button><br><br>
 	<canvas id="canvas" style="width: 100%;"></canvas><br><br>
 	<div style="display: inline-block;">
 		<h5 style="display: inline;">Delay</h5><br>
-		<input id="delay" type="range" min="50" max="2000" value="500">
+		<input id="delay" type="range" min="5" max="1000" value="500">
 		<span id="delayNumber">500</span> ms
 	</div>
-	<button style="float: right;" onclick="generateLayer();">Next Layer</button><br><br>
+	<button style="float: right;" onclick="generateLayer();">Next Layer</button><br>
+	<button id="start">Start</button>
 </main>
 
 <script>
@@ -35,6 +35,8 @@ layout: default
 	const _granularityNumberElement = document.getElementById("granularityNumber");
 	const _pixelsElement = document.getElementById("pixels");
 	const _pixelsNumberElement = document.getElementById("pixelsNumber");
+	const _delayElement = document.getElementById("delay");
+	const _delayNumberElement = document.getElementById("delayNumber");
 	const _startElement = document.getElementById("start");
 
 	const _canvasContext = _canvasElement.getContext("2d");
@@ -79,7 +81,14 @@ layout: default
 			scaleInputImage(_inputImageData);
 	});
 
+	_delayElement.addEventListener("input", function(e) {
+		_delayNumberElement.innerHTML = _delay = _delayElement.value;
+	});
+
 	_inputElement.addEventListener("change", function(e) {
+		_isRunning = false;
+		_startElement.innerHTML = "Start";
+	
 		var img = new Image();
 		img.onload = function() {
 			_canvasContext.canvas.height = img.height * (_canvasContext.canvas.width / img.width);
@@ -89,6 +98,14 @@ layout: default
 			scaleInputImage(_inputImageData);
 		};
 		img.src = URL.createObjectURL(e.target.files[0]);
+	});
+
+	_startElement.addEventListener("click", function(e) {
+		_isRunning = !_isRunning;
+		if (_isRunning) {
+			_startElement.innerHTML = "Stop";
+			generateLayer();
+		} else _startElement.innerHTML = "Start";
 	});
 
 	function scaleInputImage(imageData) {
