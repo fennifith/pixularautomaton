@@ -57,7 +57,7 @@ layout: default
 
 			let imageData = canvasContext.getImageData(0, 0, canvasContext.canvas.width, canvasContext.canvas.height);
 			origImageData = [];
-			for (let i = 0; i < imageData.data.length; i += imageData.width * 40) {
+			for (let i = 0; i < imageData.data.length; i += imageData.width * 400) {
 				for (let i2 = i; i2 < i + (imageData.width * 40); i2 += 40) {
 					origImageData.push(imageData.data[i2]);
 					origImageData.push(imageData.data[i2+1]);
@@ -65,6 +65,11 @@ layout: default
 					origImageData.push(255);
 				}
 			}
+
+			console.log(origImageData[0]);
+			console.log(origImageData[1]);
+			console.log(origImageData[2]);
+			console.log(origImageData[3]);
 			
 			imageHeight = imageData.height;
 			imageWidth = imageData.width;
@@ -95,6 +100,7 @@ layout: default
 														// the original image data
 		totalColors[0].taken = true;
 		totalColors[0].owner = 0;
+		console.log(totalColors[0]);
 
 		let progressTotal = granularity;
 		let progress = 1;
@@ -107,9 +113,6 @@ layout: default
 			
 			for (let i2 = 0; i2 < totalColors.length; i2++) {
 				let distance = 0;
-				
-				if (!totalColors[i2])
-					continue;
 				
 				if (!totalColors[i2].taken) {
 					for (let i3 = 0; i3 < colors.length; i3++) {
@@ -126,11 +129,13 @@ layout: default
 			}
 
 			if (color === null) {
+				console.error("null color in initial heuristic");
 				break;
 			} else {
 				colors.push(Object.assign({}, color)); // again, shallow copy
 				color.taken = true;
 				color.owner = colors.length - 1;
+				console.log(color);
 			}
 
 			progress++;
@@ -172,57 +177,7 @@ layout: default
 						console.log(i2 + " fighting over a color " + minDistance + " away");
 					
 					let owner = color.owner;
-					color.owner = i2;
-
-					// recalculate average for original owner
-					if (owner) {
-						colors[owner].r = null;
-						colors[owner].b = null;
-						colors[owner].g = null;
-						let count = 0;
-						
-						for (let i3 = 0; i3 < totalColors.length; i3++) {
-							if (totalColors[i3].owner == owner) {
-								if (colors[owner].r)
-									colors[owner].r = ((colors[owner].r * count) + totalColors[i3].r) / (count + 1);
-								else colors[owner].r = totalColors[i3].r;
-
-								if (colors[owner].g)
-									colors[owner].g = ((colors[owner].g * count) + totalColors[i3].g) / (count + 1);
-								else colors[owner].g = totalColors[i3].g;
-
-								if (colors[owner].b)
-									colors[owner].b = ((colors[owner].b * count) + totalColors[i3].b) / (count + 1);
-								else colors[owner].b = totalColors[i3].b;
-								
-								count++;
-							}
-						}
-					}
-
-					// recalculate average for colors[i2]
-					colors[i2].r = null;
-					colors[i2].g = null;
-					colors[i2].b = null;					
-					let count = 0;
-					
-					for (let i3 = 0; i3 < totalColors.length; i3++) {
-						if (totalColors[i3].owner == i2) {
-							if (colors[i2].r)
-								colors[i2].r = ((colors[i2].r * count) + totalColors[i3].r) / (count + 1);
-							else colors[i2].r = totalColors[i3].r;
-
-							if (colors[i2].g)
-								colors[i2].g = ((colors[i2].g * count) + totalColors[i3].g) / (count + 1);
-							else colors[i2].g = totalColors[i3].g;
-
-							if (colors[i2].b)
-								colors[i2].b = ((colors[i2].b * count) + totalColors[i3].b) / (count + 1);
-							else colors[i2].b = totalColors[i3].b;
-								
-							count++;
-						}
-					}							
+					color.owner = i2;							
 				}
 			}
 
@@ -237,6 +192,10 @@ layout: default
 		console.log("forming final image");
 		progressTotal += totalColors.length;
 
+		for (let i = 0; i < colors.length; i++) {
+			console.log(colors[i]);
+		}
+
 		// form (& set) granular image data for canvas
 		let imageData = canvasContext.createImageData(imageWidth, imageHeight);
 		granularImageData = imageData.data;
@@ -250,11 +209,17 @@ layout: default
 				color = totalColors[i];				
 			}
 
-			if (!color)
+			if (color === null)
 				color = { r: 0, g: 0, b: 0 };
 
+				i / (imageWidth / 10)
 
-			for (let i2 = i * 40; i2 < (i * 40) + 40; i2 += 4) {
+			let width = Math.floor(imageWidth / 10);
+			let row = Math.floor(i / width);
+			let col = i % width;
+
+
+			for (let i2 = (row * 400) + (col * 40); i2 < (row * 400) + (col * 40) + 40; i2 += 4) {
 					imageData.data[i2  ] = color.r;
 					imageData.data[i2+1] = color.g;
 					imageData.data[i2+2] = color.b;
