@@ -14,16 +14,15 @@ layout: default
 		<input id="granularity" type="range" min="2" max="100" value="10">
 		<span id="granularityNumber">10</span>
 	</div>
-	<button style="float: right;">Start</button>
+	<button id="start" style="float: right;">Start</button>
 </main>
 
 <script>
-	const _pixelRatio = 5;
-
 	const inputElement = document.getElementById("input");
 	const canvasElement = document.getElementById("canvas");
 	const granularityElement = document.getElementById("granularity");
 	const granularityNumberElement = document.getElementById("granularityNumber");
+	const startElement = document.getElementById("start");
 
 	const canvasContext = canvasElement.getContext("2d");
 
@@ -32,6 +31,7 @@ layout: default
 	canvasContext.webkitImageSmoothingEnabled = false;
 	canvasContext.imageSmoothingEnabled = false;
 
+	var _pixelRatio = 3;
 	var granularity = 10;
 	
 	var origImageData = [];
@@ -102,11 +102,13 @@ layout: default
 		for (let i = 1; i < granularity && i < totalColors.length; i++) {
 			let maxDistance = 0;
 			let color = null;
-			
+
+			// get color with the farthest distance from all the current "colors"
 			for (let i2 = 0; i2 < totalColors.length; i2++) {
 				if (!totalColors[i2].taken) {
 					let distance = 255 * 3;
-				
+
+					// pick the smallest distance from any current "color" to compare
 					for (let i3 = 0; i3 < colors.length; i3++) {
 						let dist = colorDistance(colors[i3], totalColors[i2]);
 						if (dist < distance)
