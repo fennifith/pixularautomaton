@@ -23,6 +23,14 @@ layout: default
 		<h5 style="display: inline;">Delay</h5><br>
 		<input id="delay" type="range" min="5" max="1000" value="500">
 		<span id="delayNumber">500</span> ms
+	</div>&nbsp;&nbsp;
+	<div style="display: inline-block;">
+		<h5 style="display: inline;">Game Type</h5><br>
+		<select id="type">
+			<option value="empty">Die Empty</option>
+			<option value="mixed">Die Mixed</option>
+			<option value="full">Die Full</option>
+		</select>
 	</div>
 	<button style="float: right;" onclick="generateLayer();">Next Layer</button><br>
 	<button id="start">Start</button>
@@ -37,6 +45,7 @@ layout: default
 	const _pixelsNumberElement = document.getElementById("pixelsNumber");
 	const _delayElement = document.getElementById("delay");
 	const _delayNumberElement = document.getElementById("delayNumber");
+	const _typeElement = document.getElementById("type");
 	const _startElement = document.getElementById("start");
 
 	const _canvasContext = _canvasElement.getContext("2d");
@@ -48,6 +57,8 @@ layout: default
 
 	var _pixelRatio = 4;
 	var _granularity = 10;
+	var _deathType = "empty";
+	var _delay = 500;
 
 	var _inputImageData;
 
@@ -60,7 +71,6 @@ layout: default
 
 	var _currentLayer = 0;
 	var _isRunning = false;
-	var _delay = 500;
 
 	_granularityElement.addEventListener("input", function(e) {
 		_granularityNumberElement.innerHTML = _granularityElement.value;
@@ -83,6 +93,10 @@ layout: default
 
 	_delayElement.addEventListener("input", function(e) {
 		_delayNumberElement.innerHTML = _delay = _delayElement.value;
+	});
+
+	_typeElement.addEventListener("change", function(e) {
+		_deathType = _typeElement.options[_typeElement.selectedIndex].value;
 	});
 
 	_inputElement.addEventListener("change", function(e) {
@@ -280,11 +294,15 @@ layout: default
 					neighbors++;
 			
 				if (_imageGrid[row][col] == _currentLayer) { // live cell
-					if (neighbors < 2)
-						newImageGrid[row][col] = nextLayer;
-					else if (neighbors > 3)
-						newImageGrid[row][col] = null;
-					else newImageGrid[row][col] = _currentLayer;
+					if (neighbors < 2) {
+						if (_deathType == "empty")
+							newImageGrid[row][col] = null;
+						else newImageGrid[row][col] = nextLayer;
+					} else if (neighbors > 3) {
+						if (_deathType == "full")
+							newImageGrid[row][col] = nextLayer;
+						else newImageGrid[row][col] = null;
+					} else newImageGrid[row][col] = _currentLayer;
 				} else { // dead cell
 					if (neighbors == 3)
 						newImageGrid[row][col] = _currentLayer;
