@@ -15,7 +15,6 @@ layout: default
 		<span id="granularityNumber">10</span>
 	</div>
 	<button style="float: right;">Start</button>
-	<h3>Progress: <span id="progress">Not started...</span></h3>
 </main>
 
 <script>
@@ -25,7 +24,6 @@ layout: default
 	const canvasElement = document.getElementById("canvas");
 	const granularityElement = document.getElementById("granularity");
 	const granularityNumberElement = document.getElementById("granularityNumber");
-	const progressElement = document.getElementById("progress");
 
 	const canvasContext = canvasElement.getContext("2d");
 
@@ -99,9 +97,6 @@ layout: default
 		totalColors[0].owner = 0;
 		console.log(totalColors[0]);
 
-		let progressTotal = granularity;
-		let progress = 1;
-
 		console.log("starting initial heuristic");
 
 		for (let i = 1; i < granularity && i < totalColors.length; i++) {
@@ -137,17 +132,12 @@ layout: default
 				color.owner = colors.length - 1;
 				console.log(color);
 			}
-
-			progress++;
-			updateProgress(progress, progressTotal);
 		}
 
 		console.log("categorizing colors");
 
-		let iterations = Math.ceil((totalColors.length - colors.length) / colors.length);
-		progressTotal += iterations;
-
 		// categorize colors into groups
+		// amount of iterations should be near Math.ceil((totalColors.length - colors.length) / colors.length);
 		while (true) {
 			let hasColor = false;
 		
@@ -181,16 +171,11 @@ layout: default
 				}
 			}
 
-			progress++;
-			updateProgress(progress, progressTotal);
-			await sleep(10);
-
 			if (!hasColor)
 				break;
 		}
 
 		console.log("forming final image");
-		progressTotal += totalColors.length;
 
 		for (let i = 0; i < colors.length; i++) {
 			console.log(colors[i]);
@@ -227,15 +212,8 @@ layout: default
 					imageData.data[i3+3] = 255;
 				}	
 			}
-
-			progress++;
-			updateProgress(progress, progressTotal);
-			await sleep(10);
 		}
 		canvasContext.putImageData(imageData, 0, 0);
-
-		progress = progressTotal;
-		updateProgress(progress, progressTotal);
 
 		// TODO: generate 2d data set for use in actual iterations
 	}
@@ -255,15 +233,5 @@ layout: default
 		}
 		
 		return Math.abs(c1.r - c2.r) + Math.abs(c1.g - c2.g) + Math.abs(c1.b - c2.b);
-	}
-
-	function updateProgress(progress, total) {
-		progressElement.innerHTML = Math.round(progress * 100 / total) + "%";
-	}
-
-	function sleep(duration) {
-		return new Promise(function(resolve) {
-			setTimeout(resolve, duration);
-		});
 	}
 </script>
