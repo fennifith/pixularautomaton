@@ -57,14 +57,13 @@ layout: default
 
 			let imageData = canvasContext.getImageData(0, 0, canvasContext.canvas.width, canvasContext.canvas.height);
 			origImageData = [];
-			for (let i = 0; i < imageData.data.length; i += 40) {
-				origImageData.push(imageData.data[i]);
-				origImageData.push(imageData.data[i+1]);
-				origImageData.push(imageData.data[i+2]);
-				origImageData.push(255);
-					
-				if (i % (imageData.width * 4) == 0)
-					i += imageData.width * 40;
+			for (let i = 0; i < imageData.data.length; i += imageData.width * 40) {
+				for (let i2 = i; i2 < i + (imageData.width * 40); i2 += 40) {
+					origImageData.push(imageData.data[i2]);
+					origImageData.push(imageData.data[i2+1]);
+					origImageData.push(imageData.data[i2+2]);
+					origImageData.push(255);
+				}
 			}
 			
 			imageHeight = imageData.height;
@@ -144,7 +143,9 @@ layout: default
 		progressTotal += iterations;
 
 		// categorize colors into groups
-		for (let i = 0; i < iterations; i++) {
+		while (true) {
+			let hasColor = false;
+		
 			for (let i2 = 0; i2 < colors.length; i2++) {
 				let minDistance = null;
 				let color = null;
@@ -154,10 +155,8 @@ layout: default
 					if (!totalColors[i3].taken && totalColors[i3].owner != i2) {
 						let distance = colorDistance(colors[i2], totalColors[i3]);
 						// continue if the current owner of totalColors[i3] is closer
-						if (totalColors[i3].owner && distance > colorDistance(colors[totalColors[i3].owner], totalColors[i3]))
+						if (totalColors[i3].owner) // && distance >= colorDistance(colors[totalColors[i3].owner], totalColors[i3]))
 							continue;
-
-						if (totalColors[i3])
 
 						if (minDistance === null || distance < minDistance) {
 							minDistance = distance;
@@ -167,6 +166,11 @@ layout: default
 				}
 
 				if (color) {
+					hasColor = true;
+
+					if (color.owner)
+						console.log(i2 + " fighting over a color " + minDistance + " away");
+					
 					let owner = color.owner;
 					color.owner = i2;
 
@@ -225,15 +229,19 @@ layout: default
 			progress++;
 			updateProgress(progress, progressTotal);
 			await sleep(10);
+
+			if (!hasColor)
+				break;
 		}
 
 		console.log("forming final image");
-		progressTotal += totalColors.length * 4;
+		progressTotal += totalColors.length;
 
 		// form (& set) granular image data for canvas
 		let imageData = canvasContext.createImageData(imageWidth, imageHeight);
 		granularImageData = imageData.data;
-		for (let i = 0; i < totalColors.length * 4; i += 4) {
+
+		for (let i = 0; i < totalColors.length; i++) {
 			let color = null;
 			if (totalColors[i] && totalColors[i].owner) {
 				color = colors[totalColors[i].owner];
@@ -245,14 +253,12 @@ layout: default
 			if (!color)
 				color = { r: 0, g: 0, b: 0 };
 
-			for (let x = 0; x < 40; x += 4) {
-				for (let y = 0; y < 40; y += 4) {
-					let pos = i + x + (y * imageWidth);
-					granularImageData[pos  ] = color.r;
-					granularImageData[pos+1] = color.g;
-					granularImageData[pos+2] = color.b;
-					granularImageData[pos+3] = 255;
-				}
+
+			for (let i2 = i * 40; i2 < (i * 40) + 40; i2 += 4) {
+					imageData.data[i2  ] = color.r;
+					imageData.data[i2+1] = color.g;
+					imageData.data[i2+2] = color.b;
+					imageData.data[i2+3] = 255;
 			}
 
 			progress++;
@@ -276,6 +282,11 @@ layout: default
 	 * @param c2		The second color object.
 	 */
 	function colorDistance(c1, c2) {
+		if (!c1 || !c2) {
+			console.error("You did a big dumb");
+			return 99999999;
+		}
+		
 		return Math.abs(c1.r - c2.r) + Math.abs(c1.g - c2.g) + Math.abs(c1.b - c2.b);
 	}
 
