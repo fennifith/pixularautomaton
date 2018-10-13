@@ -203,45 +203,59 @@ layout: default
 
 		console.log("forming final image");
 
-		for (let i = 0; i < _colors.length; i++) {
-			console.log(_colors[i]);
-		}
-
-		// form (& set) granular image data for canvas
-		let imageData = _canvasContext.createImageData(_imageWidth, _imageHeight);
-		_granularImageData = imageData.data;
-
-		let i3 = 0;
-
+		// form a grid of granular image data for canvas
+		_imageGrid = [];
+		let width = Math.floor(_imageWidth / _pixelRatio);
+		
 		for (let i = 0; i < totalColors.length; i++) {
-			let color = null;
+			let owner = 0;
 			if (totalColors[i] && totalColors[i].owner) {
-				color = _colors[totalColors[i].owner];
+				owner = totalColors[i].owner;
 			} else {
 				console.error("Color without an owner at index " + i + "!");
-				color = totalColors[i];				
+				owner = 0;
 			}
 
-			if (color === null)
-				color = _colors[0]; // weird fallback
-
-			let width = Math.floor(_imageWidth / _pixelRatio);
 			let row = Math.floor(i / width);
 			let col = i % width;
 
-			let startIndex = (row * 4 * _pixelRatio * _imageWidth) + (col * 4 * _pixelRatio);
-			for (let i2 = startIndex; i2 < startIndex + (4 * _pixelRatio); i2 += 4) {
-				for (i3 = i2; i3 < i2 + (4 * _pixelRatio * _imageWidth); i3 += (4 * _imageWidth)) {
-					imageData.data[i3  ] = color.r;
-					imageData.data[i3+1] = color.g;
-					imageData.data[i3+2] = color.b;
-					imageData.data[i3+3] = 255;
-				}	
+			if (!_imageGrid[row])
+				_imageGrid[row] = [];
+
+			_imageGrid[row][col] = owner;
+		}
+
+		updateCanvasImage();
+	}
+
+	/**
+	 * Updates the image drawn on the canvas to match the grid of colors
+	 * defined in `_imageGrid`.
+	 */
+	function updateCanvasImage() {
+		console.log("updating canvas");
+	
+		let imageData = _canvasContext.createImageData(_imageWidth, _imageHeight);
+		_granularImageData = imageData.data;
+
+		let width = Math.floor(_imageWidth / _pixelRatio);
+		for (let row = 0; row < _imageGrid.length; row++) {
+			for (let col = 0; col < _imageGrid[row].length; col++) {
+				let color = _colors[_imageGrid[row][col]];
+
+				let startIndex = (row * 4 * _pixelRatio * _imageWidth) + (col * 4 * _pixelRatio);
+				for (let i2 = startIndex; i2 < startIndex + (4 * _pixelRatio); i2 += 4) {
+					for (let i3 = i2; i3 < i2 + (4 * _pixelRatio * _imageWidth); i3 += (4 * _imageWidth)) {
+						imageData.data[i3  ] = color.r;
+						imageData.data[i3+1] = color.g;
+						imageData.data[i3+2] = color.b;
+						imageData.data[i3+3] = 255;
+					}	
+				}
 			}
 		}
+		
 		_canvasContext.putImageData(imageData, 0, 0);
-
-		// TODO: generate 2d data set for use in actual iterations
 	}
  
 	/**
