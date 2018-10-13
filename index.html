@@ -11,7 +11,7 @@ layout: default
 	<canvas id="canvas" style="width: 100%;"></canvas><br><br>
 	<div style="display: inline-block;">
 		<h5 style="display: inline;">Granularity</h5><br>
-		<input id="granularity" type="range" min="2" max="500" value="10">
+		<input id="granularity" type="range" min="2" max="100" value="10">
 		<span id="granularityNumber">10</span>
 	</div>
 	<button style="float: right;">Start</button>
@@ -19,6 +19,8 @@ layout: default
 </main>
 
 <script>
+	const _pixelRatio = 5;
+
 	const inputElement = document.getElementById("input");
 	const canvasElement = document.getElementById("canvas");
 	const granularityElement = document.getElementById("granularity");
@@ -57,19 +59,14 @@ layout: default
 
 			let imageData = canvasContext.getImageData(0, 0, canvasContext.canvas.width, canvasContext.canvas.height);
 			origImageData = [];
-			for (let i = 0; i < imageData.data.length; i += imageData.width * 400) {
-				for (let i2 = i; i2 < i + (imageData.width * 40); i2 += 40) {
+			for (let i = 0; i < imageData.data.length; i += imageData.width * 4 * _pixelRatio * _pixelRatio) {
+				for (let i2 = i; i2 < i + (imageData.width * 4 * _pixelRatio); i2 += 4 * _pixelRatio) {
 					origImageData.push(imageData.data[i2]);
 					origImageData.push(imageData.data[i2+1]);
 					origImageData.push(imageData.data[i2+2]);
 					origImageData.push(255);
 				}
 			}
-
-			console.log(origImageData[0]);
-			console.log(origImageData[1]);
-			console.log(origImageData[2]);
-			console.log(origImageData[3]);
 			
 			imageHeight = imageData.height;
 			imageWidth = imageData.width;
@@ -112,14 +109,17 @@ layout: default
 			let color = null;
 			
 			for (let i2 = 0; i2 < totalColors.length; i2++) {
-				let distance = 0;
-				
 				if (!totalColors[i2].taken) {
+					let distance = 255 * 3;
+				
 					for (let i3 = 0; i3 < colors.length; i3++) {
-						distance += colorDistance(colors[i3], totalColors[i2]);
+						let dist = colorDistance(colors[i3], totalColors[i2]);
+						if (dist < distance)
+							distance = dist;
 					}
 
-					distance /= colors.length;
+					if (distance == 0)
+						continue;
 
 					if (distance > maxDistance) {
 						maxDistance = distance;
@@ -200,6 +200,8 @@ layout: default
 		let imageData = canvasContext.createImageData(imageWidth, imageHeight);
 		granularImageData = imageData.data;
 
+		let i3 = 0;
+
 		for (let i = 0; i < totalColors.length; i++) {
 			let color = null;
 			if (totalColors[i] && totalColors[i].owner) {
@@ -210,20 +212,20 @@ layout: default
 			}
 
 			if (color === null)
-				color = { r: 0, g: 0, b: 0 };
+				color = colors[0]; // weird fallback
 
-				i / (imageWidth / 10)
-
-			let width = Math.floor(imageWidth / 10);
+			let width = Math.floor(imageWidth / _pixelRatio);
 			let row = Math.floor(i / width);
 			let col = i % width;
 
-
-			for (let i2 = (row * 400) + (col * 40); i2 < (row * 400) + (col * 40) + 40; i2 += 4) {
-					imageData.data[i2  ] = color.r;
-					imageData.data[i2+1] = color.g;
-					imageData.data[i2+2] = color.b;
-					imageData.data[i2+3] = 255;
+			let startIndex = (row * 4 * _pixelRatio * imageWidth) + (col * 4 * _pixelRatio);
+			for (let i2 = startIndex; i2 < startIndex + (4 * _pixelRatio); i2 += 4) {
+				for (i3 = i2; i3 < i2 + (4 * _pixelRatio * imageWidth); i3 += (4 * imageWidth)) {
+					imageData.data[i3  ] = color.r;
+					imageData.data[i3+1] = color.g;
+					imageData.data[i3+2] = color.b;
+					imageData.data[i3+3] = 255;
+				}	
 			}
 
 			progress++;
