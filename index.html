@@ -19,7 +19,13 @@ layout: default
 		<span id="pixelsNumber">4</span>
 	</div>
 	<button id="start" style="float: right;">Start</button><br><br>
-	<canvas id="canvas" style="width: 100%;"></canvas>
+	<canvas id="canvas" style="width: 100%;"></canvas><br><br>
+	<div style="display: inline-block;">
+		<h5 style="display: inline;">Delay</h5><br>
+		<input id="delay" type="range" min="50" max="2000" value="500">
+		<span id="delayNumber">500</span> ms
+	</div>
+	<button style="float: right;" onclick="generateLayer();">Next Layer</button><br><br>
 </main>
 
 <script>
@@ -48,7 +54,11 @@ layout: default
 	var _granularImageData = [];
 	var _imageHeight = 0;
 	var _imageWidth = 0;
-	var _imageGrid = [];	
+	var _imageGrid = [];
+
+	var _currentLayer = 0;
+	var _isRunning = false;
+	var _delay = 500;
 
 	_granularityElement.addEventListener("input", function(e) {
 		_granularityNumberElement.innerHTML = _granularityElement.value;
@@ -228,6 +238,58 @@ layout: default
 		updateCanvasImage();
 	}
 
+	function generateLayer() {
+		let nextLayer = (_currentLayer + 1) % _colors.length;
+		let newImageGrid = [];
+		for (let row = 0; row < _imageGrid.length; row++) {
+			newImageGrid[row] = [];
+			for (let col = 0; col < _imageGrid[row].length; col++) {
+				let neighbors = 0;
+				if (_imageGrid[repeatIndex(row + 1, _imageGrid.length)][repeatIndex(col + 1, _imageGrid[row].length)] == _currentLayer)
+					neighbors++;
+				if (_imageGrid[repeatIndex(row + 1, _imageGrid.length)][col] == _currentLayer)
+					neighbors++;
+				if (_imageGrid[repeatIndex(row + 1, _imageGrid.length)][repeatIndex(col - 1, _imageGrid[row].length)] == _currentLayer)
+					neighbors++;
+				if (_imageGrid[row][repeatIndex(col + 1, _imageGrid[row].length)] == _currentLayer)
+					neighbors++;
+				if (_imageGrid[row][repeatIndex(col - 1, _imageGrid[row].length)] == _currentLayer)
+					neighbors++;
+				if (_imageGrid[repeatIndex(row - 1, _imageGrid.length)][repeatIndex(col + 1, _imageGrid[row].length)] == _currentLayer)
+					neighbors++;
+				if (_imageGrid[repeatIndex(row - 1, _imageGrid.length)][col] == _currentLayer)
+					neighbors++;
+				if (_imageGrid[repeatIndex(row - 1, _imageGrid.length)][repeatIndex(col - 1, _imageGrid[row].length)] == _currentLayer)
+					neighbors++;
+			
+				if (_imageGrid[row][col] == _currentLayer) { // live cell
+					if (neighbors < 2)
+						newImageGrid[row][col] = nextLayer;
+					else if (neighbors > 3)
+						newImageGrid[row][col] = null;
+					else newImageGrid[row][col] = _currentLayer;
+				} else { // dead cell
+					if (neighbors == 3)
+						newImageGrid[row][col] = _currentLayer;
+					else newImageGrid[row][col] = _imageGrid[row][col];
+				}
+			}
+		}
+
+		_imageGrid = newImageGrid;
+		updateCanvasImage();
+		_currentLayer = nextLayer;
+		
+		if (_isRunning)
+			setTimeout(generateLayer, _delay);
+	}
+
+	function repeatIndex(i, length) {
+		if (i > 0)
+			return i % length;
+		else return repeatIndex(i + length, length);
+	}
+
 	/**
 	 * Updates the image drawn on the canvas to match the grid of colors
 	 * defined in `_imageGrid`.
@@ -241,7 +303,10 @@ layout: default
 		let width = Math.floor(_imageWidth / _pixelRatio);
 		for (let row = 0; row < _imageGrid.length; row++) {
 			for (let col = 0; col < _imageGrid[row].length; col++) {
-				let color = _colors[_imageGrid[row][col]];
+				let color = {r: 0, g: 0, b: 0};
+				
+				if (_imageGrid[row][col])
+					color = _colors[_imageGrid[row][col]];
 
 				let startIndex = (row * 4 * _pixelRatio * _imageWidth) + (col * 4 * _pixelRatio);
 				for (let i2 = startIndex; i2 < startIndex + (4 * _pixelRatio); i2 += 4) {
