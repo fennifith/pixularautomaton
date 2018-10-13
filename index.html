@@ -18,56 +18,55 @@ layout: default
 </main>
 
 <script>
-	const inputElement = document.getElementById("input");
-	const canvasElement = document.getElementById("canvas");
-	const granularityElement = document.getElementById("granularity");
-	const granularityNumberElement = document.getElementById("granularityNumber");
-	const startElement = document.getElementById("start");
+	const _inputElement = document.getElementById("input");
+	const _canvasElement = document.getElementById("canvas");
+	const _granularityElement = document.getElementById("granularity");
+	const _granularityNumberElement = document.getElementById("granularityNumber");
+	const _startElement = document.getElementById("start");
 
-	const canvasContext = canvasElement.getContext("2d");
+	const _canvasContext = _canvasElement.getContext("2d");
 
-	canvasContext.msImageSmoothingEnabled = false;
-	canvasContext.mozImageSmoothingEnabled = false;
-	canvasContext.webkitImageSmoothingEnabled = false;
-	canvasContext.imageSmoothingEnabled = false;
+	_canvasContext.msImageSmoothingEnabled = false;
+	_canvasContext.mozImageSmoothingEnabled = false;
+	_canvasContext.webkitImageSmoothingEnabled = false;
+	_canvasContext.imageSmoothingEnabled = false;
 
 	var _pixelRatio = 3;
-	var granularity = 10;
+	var _granularity = 10;
 	
-	var origImageData = [];
-	var granularImageData = [];
-	var imageHeight = 0;
-	var imageWidth = 0;
-	var dataMap = {};
+	var _origImageData = [];
+	var _granularImageData = [];
+	var _imageHeight = 0;
+	var _imageWidth = 0;
 
-	granularityElement.addEventListener("input", function(e) {
-		granularityNumberElement.innerHTML = granularityElement.value;
+	_granularityElement.addEventListener("input", function(e) {
+		_granularityNumberElement.innerHTML = _granularityElement.value;
 	});
 
-	granularityElement.addEventListener("change", function(e) {
-		granularity = granularityElement.value;
+	_granularityElement.addEventListener("change", function(e) {
+		_granularity = _granularityElement.value;
 		onGranularityChange();
 	});
 
-	inputElement.addEventListener("change", function(e) {
+	_inputElement.addEventListener("change", function(e) {
 		var img = new Image();
 		img.onload = function() {
-			canvasContext.canvas.height = img.height * (canvasContext.canvas.width / img.width);
-			canvasContext.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvasContext.canvas.width, img.height * (canvasContext.canvas.width / img.width));
+			_canvasContext.canvas.height = img.height * (_canvasContext.canvas.width / img.width);
+			_canvasContext.drawImage(img, 0, 0, img.width, img.height, 0, 0, _canvasContext.canvas.width, img.height * (_canvasContext.canvas.width / img.width));
 
-			let imageData = canvasContext.getImageData(0, 0, canvasContext.canvas.width, canvasContext.canvas.height);
-			origImageData = [];
+			let imageData = _canvasContext.getImageData(0, 0, _canvasContext.canvas.width, _canvasContext.canvas.height);
+			_origImageData = [];
 			for (let i = 0; i < imageData.data.length; i += imageData.width * 4 * _pixelRatio * _pixelRatio) {
 				for (let i2 = i; i2 < i + (imageData.width * 4 * _pixelRatio); i2 += 4 * _pixelRatio) {
-					origImageData.push(imageData.data[i2]);
-					origImageData.push(imageData.data[i2+1]);
-					origImageData.push(imageData.data[i2+2]);
-					origImageData.push(255);
+					_origImageData.push(imageData.data[i2]);
+					_origImageData.push(imageData.data[i2+1]);
+					_origImageData.push(imageData.data[i2+2]);
+					_origImageData.push(255);
 				}
 			}
 			
-			imageHeight = imageData.height;
-			imageWidth = imageData.width;
+			_imageHeight = imageData.height;
+			_imageWidth = imageData.width;
 			
 			onGranularityChange();
 		};
@@ -78,15 +77,15 @@ layout: default
 	 * This function is called whenever the granularity of the image is updated.
 	 * It should take the origImageData array (an array of 0-255 ints in multiples 
 	 * of four; rgba values), sort them into the amount of "arrays" specified by
-	 * `granularity`, store the average values of said arrays in `colors`, and
-	 * write the "averaged" version of the image data to `granularImageData`,
-	 * passing it to the `canvasContext` as it does so.
+	 * `_granularity`, store the average values of said arrays in `colors`, and
+	 * write the "averaged" version of the image data to `_granularImageData`,
+	 * passing it to the `_canvasContext` as it does so.
 	 */
 	async function onGranularityChange() {
 		let totalColors = [];
 		let colors = [];
-		for (let i = 0; i < origImageData.length; i += 4) {
-			totalColors.push({r: origImageData[i], g: origImageData[i+1], b: origImageData[i+2]});
+		for (let i = 0; i < _origImageData.length; i += 4) {
+			totalColors.push({r: _origImageData[i], g: _origImageData[i+1], b: _origImageData[i+2]});
 		}
 
 		// decide initial colors (start at 0, find the farthest away color, etc)		
@@ -99,7 +98,7 @@ layout: default
 
 		console.log("starting initial heuristic");
 
-		for (let i = 1; i < granularity && i < totalColors.length; i++) {
+		for (let i = 1; i < _granularity && i < totalColors.length; i++) {
 			let maxDistance = 0;
 			let color = null;
 
@@ -184,8 +183,8 @@ layout: default
 		}
 
 		// form (& set) granular image data for canvas
-		let imageData = canvasContext.createImageData(imageWidth, imageHeight);
-		granularImageData = imageData.data;
+		let imageData = _canvasContext.createImageData(_imageWidth, _imageHeight);
+		_granularImageData = imageData.data;
 
 		let i3 = 0;
 
@@ -201,13 +200,13 @@ layout: default
 			if (color === null)
 				color = colors[0]; // weird fallback
 
-			let width = Math.floor(imageWidth / _pixelRatio);
+			let width = Math.floor(_imageWidth / _pixelRatio);
 			let row = Math.floor(i / width);
 			let col = i % width;
 
-			let startIndex = (row * 4 * _pixelRatio * imageWidth) + (col * 4 * _pixelRatio);
+			let startIndex = (row * 4 * _pixelRatio * _imageWidth) + (col * 4 * _pixelRatio);
 			for (let i2 = startIndex; i2 < startIndex + (4 * _pixelRatio); i2 += 4) {
-				for (i3 = i2; i3 < i2 + (4 * _pixelRatio * imageWidth); i3 += (4 * imageWidth)) {
+				for (i3 = i2; i3 < i2 + (4 * _pixelRatio * _imageWidth); i3 += (4 * _imageWidth)) {
 					imageData.data[i3  ] = color.r;
 					imageData.data[i3+1] = color.g;
 					imageData.data[i3+2] = color.b;
@@ -215,7 +214,7 @@ layout: default
 				}	
 			}
 		}
-		canvasContext.putImageData(imageData, 0, 0);
+		_canvasContext.putImageData(imageData, 0, 0);
 
 		// TODO: generate 2d data set for use in actual iterations
 	}
