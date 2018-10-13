@@ -33,11 +33,13 @@ layout: default
 
 	var _pixelRatio = 3;
 	var _granularity = 10;
-	
+
+	var _colors = [];
 	var _origImageData = [];
 	var _granularImageData = [];
 	var _imageHeight = 0;
 	var _imageWidth = 0;
+	var _imageGrid = [];	
 
 	_granularityElement.addEventListener("input", function(e) {
 		_granularityNumberElement.innerHTML = _granularityElement.value;
@@ -83,13 +85,13 @@ layout: default
 	 */
 	async function onGranularityChange() {
 		let totalColors = [];
-		let colors = [];
+		_colors = [];
 		for (let i = 0; i < _origImageData.length; i += 4) {
 			totalColors.push({r: _origImageData[i], g: _origImageData[i+1], b: _origImageData[i+2]});
 		}
 
 		// decide initial colors (start at 0, find the farthest away color, etc)		
-		colors.push(Object.assign({}, totalColors[0])); // shallow copy; as the colors array stores average colors of the whole image,
+		_colors.push(Object.assign({}, totalColors[0])); // shallow copy; as the colors array stores average colors of the whole image,
 														// its color data will be modified, which (if stored in totalColors) would affect
 														// the original image data
 		totalColors[0].taken = true;
@@ -108,8 +110,8 @@ layout: default
 					let distance = 255 * 3;
 
 					// pick the smallest distance from any current "color" to compare
-					for (let i3 = 0; i3 < colors.length; i3++) {
-						let dist = colorDistance(colors[i3], totalColors[i2]);
+					for (let i3 = 0; i3 < _colors.length; i3++) {
+						let dist = colorDistance(_colors[i3], totalColors[i2]);
 						if (dist < distance)
 							distance = dist;
 					}
@@ -128,9 +130,9 @@ layout: default
 				console.error("null color in initial heuristic");
 				break;
 			} else {
-				colors.push(Object.assign({}, color)); // again, shallow copy
+				_colors.push(Object.assign({}, color)); // again, shallow copy
 				color.taken = true;
-				color.owner = colors.length - 1;
+				color.owner = _colors.length - 1;
 				console.log(color);
 			}
 		}
@@ -138,20 +140,20 @@ layout: default
 		console.log("categorizing colors");
 
 		// categorize colors into groups
-		// amount of iterations should be near Math.ceil((totalColors.length - colors.length) / colors.length);
+		// amount of iterations should be near Math.ceil((totalColors.length - _colors.length) / _colors.length);
 		while (true) {
 			let hasColor = false;
 		
-			for (let i2 = 0; i2 < colors.length; i2++) {
+			for (let i2 = 0; i2 < _colors.length; i2++) {
 				let minDistance = null;
 				let color = null;
 
 				// find closest color to color[i2]
 				for (let i3 = 0; i3 < totalColors.length; i3++) {
 					if (!totalColors[i3].taken && totalColors[i3].owner != i2) {
-						let distance = colorDistance(colors[i2], totalColors[i3]);
+						let distance = colorDistance(_colors[i2], totalColors[i3]);
 						// continue if the current owner of totalColors[i3] is closer
-						if (totalColors[i3].owner) // && distance >= colorDistance(colors[totalColors[i3].owner], totalColors[i3]))
+						if (totalColors[i3].owner) // && distance >= colorDistance(_colors[totalColors[i3].owner], totalColors[i3]))
 							continue;
 
 						if (minDistance === null || distance < minDistance) {
@@ -178,8 +180,8 @@ layout: default
 
 		console.log("forming final image");
 
-		for (let i = 0; i < colors.length; i++) {
-			console.log(colors[i]);
+		for (let i = 0; i < _colors.length; i++) {
+			console.log(_colors[i]);
 		}
 
 		// form (& set) granular image data for canvas
@@ -191,14 +193,14 @@ layout: default
 		for (let i = 0; i < totalColors.length; i++) {
 			let color = null;
 			if (totalColors[i] && totalColors[i].owner) {
-				color = colors[totalColors[i].owner];
+				color = _colors[totalColors[i].owner];
 			} else {
 				console.error("Color without an owner at index " + i + "!");
 				color = totalColors[i];				
 			}
 
 			if (color === null)
-				color = colors[0]; // weird fallback
+				color = _colors[0]; // weird fallback
 
 			let width = Math.floor(_imageWidth / _pixelRatio);
 			let row = Math.floor(i / width);
