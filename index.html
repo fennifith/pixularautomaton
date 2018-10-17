@@ -7,23 +7,25 @@ layout: default
 		Imagerator is a project that does things with stuff and the stuff
 		does the big complicated thing to make it happen.
 	</p>
-	<input id="input" type="file" accept="image/*"><br><br>
+	<input id="input" type="file" accept="image/*">
+	<label for="input">Choose an image</label><br><br>
 	<div style="display: inline-block;">
 		<h5 style="display: inline;">Granularity</h5><br>
 		<input id="granularity" type="range" min="2" max="100" value="10">
-		<span id="granularityNumber">10</span>
+		<label id="granularityNumber" for="granularity">10</label>
 	</div>&nbsp;&nbsp;
 	<div style="display: inline-block;">
 		<h5 style="display: inline;">Pixelation</h5><br>
 		<input id="pixels" type="range" min="2" max="10" value="4">
-		<span id="pixelsNumber">4</span>
+		<label id="pixelsNumber" for="pixels">4</label>
 	</div>
 	<canvas id="canvas" style="width: 100%;"></canvas><br><br>
 	<div style="display: inline-block;">
 		<h5 style="display: inline;">Delay</h5><br>
 		<input id="delay" type="range" min="5" max="1000" value="500">
-		<span id="delayNumber">500</span> ms
-	</div>&nbsp;&nbsp;
+		<label id="delayNumber" for="delay">500 ms</label>
+	</div>
+	<button style="float: right;" onclick="generateLayer();">Next Layer</button><br>
 	<div style="display: inline-block;">
 		<h5 style="display: inline;">Death Type</h5><br>
 		<select id="type">
@@ -31,8 +33,7 @@ layout: default
 			<option value="mixed">Die Mixed</option>
 			<option value="full">Die Full</option>
 		</select>
-	</div>
-	<button style="float: right;" onclick="generateLayer();">Next Layer</button><br>
+	</div><br>
 	<button id="start">Start</button>
 </main>
 
@@ -92,7 +93,8 @@ layout: default
 	});
 
 	_delayElement.addEventListener("input", function(e) {
-		_delayNumberElement.innerHTML = _delay = _delayElement.value;
+		_delay = _delayElement.value;
+		_delayNumberElement.innerHTML = _delayElement.value + " ms";
 	});
 
 	_typeElement.addEventListener("change", function(e) {
