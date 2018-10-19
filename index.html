@@ -207,6 +207,7 @@ layout: default
 
 		// categorize colors into groups
 		// amount of iterations should be near Math.ceil((totalColors.length - _colors.length) / _colors.length);
+		/*
 		while (true) {
 			let hasColor = false;
 		
@@ -243,26 +244,48 @@ layout: default
 			if (!hasColor)
 				break;
 		}
+		*/
+
+		for (let i = 0; i < totalColors.length; i++) {
+			if (totalColors[i].owner)
+				continue;
+		
+			let minDistance = null;
+			let index = null;
+
+			for (let i2 = 0; i2 < _colors.length; i2++) {
+				let distance = colorDistance(_colors[i2], totalColors[i]);
+				if (distance && (minDistance === null || distance < minDistance)) {
+					minDistance = distance;
+					index = i2;
+				}
+			}
+
+			if (index != null)
+				totalColors[i].owner = index;
+			else totalColors[i].owner = 0;
+		}
 
 		console.log("forming final image");
 
 		// form a grid of granular image data for canvas
 		_imageGrid = [];
-		let width = Math.floor(_imageWidth / _pixelRatio);
+		let width = Math.round(_imageWidth / _pixelRatio);
 		
 		for (let i = 0; i < totalColors.length; i++) {
 			let owner = 0;
-			if (totalColors[i] && totalColors[i].owner) {
+			if (totalColors[i] && totalColors[i].owner != null) {
 				owner = totalColors[i].owner;
 			} else {
 				console.error("Color without an owner at index " + i + "!");
+				console.log(totalColors[i]);
 				owner = 0;
 			}
 
 			let row = Math.floor(i / width);
 			let col = i % width;
 
-			if (!_imageGrid[row])
+			if (_imageGrid[row] == null)
 				_imageGrid[row] = [];
 
 			_imageGrid[row][col] = owner;
@@ -342,7 +365,7 @@ layout: default
 			for (let col = 0; col < _imageGrid[row].length; col++) {
 				let color = {r: 0, g: 0, b: 0};
 				
-				if (_imageGrid[row][col])
+				if (_imageGrid[row][col] != null)
 					color = _colors[_imageGrid[row][col]];
 
 				let startIndex = (row * 4 * _pixelRatio * _imageWidth) + (col * 4 * _pixelRatio);
