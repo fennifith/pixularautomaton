@@ -17,14 +17,14 @@ layout: default
 		<h5 style="display: inline;">Pixelation</h5><br>
 		<input id="pixels" type="range" min="2" max="10" value="4">
 		<label id="pixelsNumber" for="pixels">4</label>
-	</div>
-	<canvas id="canvas" style="width: 100%;"></canvas><br><br>
+	</div><br><br>
+	<canvas id="canvas" style="border: 1px solid #BDBDBD; width: calc(100% - 2px);"></canvas><br><br>
 	<div style="display: inline-block;">
 		<h5 style="display: inline;">Delay</h5><br>
 		<input id="delay" type="range" min="5" max="1000" value="500">
 		<label id="delayNumber" for="delay">500 ms</label>
 	</div>
-	<button style="float: right;" onclick="generateLayer();">Next Layer</button><br>
+	<button class="button" style="float: right;" onclick="generateLayer();">Next Layer</button><br>
 	<div style="display: inline-block;">
 		<h5 style="display: inline;">Death Type</h5><br>
 		<select id="type">
@@ -33,7 +33,7 @@ layout: default
 			<option value="full">Die Full</option>
 		</select>
 	</div><br>
-	<button id="start">Start</button>
+	<button class="button" id="start">Start</button>
 </main>
 
 <script>
