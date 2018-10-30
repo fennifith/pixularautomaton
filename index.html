@@ -3,10 +3,9 @@ layout: default
 ---
 
 <main>
-	<p>
-		Imagerator is a project that does things with stuff and the stuff
-		does the big complicated thing to make it happen.
-	</p>
+	{% capture readme %}{% include_relative README.md %}{% endcapture %}
+	{{ readme | markdownify }}
+	<br>
 	<input id="input" type="file" accept="image/*">
 	<label for="input">Choose an image</label><br><br>
 	<div style="display: inline-block;">
@@ -206,46 +205,6 @@ layout: default
 		console.log("categorizing colors");
 
 		// categorize colors into groups
-		// amount of iterations should be near Math.ceil((totalColors.length - _colors.length) / _colors.length);
-		/*
-		while (true) {
-			let hasColor = false;
-		
-			for (let i2 = 0; i2 < _colors.length; i2++) {
-				let minDistance = null;
-				let color = null;
-
-				// find closest color to color[i2]
-				for (let i3 = 0; i3 < totalColors.length; i3++) {
-					if (!totalColors[i3].taken && totalColors[i3].owner != i2) {
-						let distance = colorDistance(_colors[i2], totalColors[i3]);
-						// continue if the current owner of totalColors[i3] is closer
-						if (totalColors[i3].owner) // && distance >= colorDistance(_colors[totalColors[i3].owner], totalColors[i3]))
-							continue;
-
-						if (minDistance === null || distance < minDistance) {
-							minDistance = distance;
-							color = totalColors[i3];
-						}
-					}
-				}
-
-				if (color) {
-					hasColor = true;
-
-					if (color.owner)
-						console.log(i2 + " fighting over a color " + minDistance + " away");
-					
-					let owner = color.owner;
-					color.owner = i2;							
-				}
-			}
-
-			if (!hasColor)
-				break;
-		}
-		*/
-
 		for (let i = 0; i < totalColors.length; i++) {
 			if (totalColors[i].owner)
 				continue;

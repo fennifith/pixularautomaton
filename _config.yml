@@ -1,7 +1,7 @@
-name: Imagerator
+name: Pixular Automaton
 description: An image generating mess.
 url: https://jfenn.me/imagerator
-baseurl: "/imagerator"
+baseurl: "/"
 
 exclude:
   - Gemfile
