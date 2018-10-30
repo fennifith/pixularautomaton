@@ -1,6 +1,6 @@
 name: Pixular Automaton
-description: An image generating mess.
-url: https://jfenn.me/imagerator
+description: A cellular automaton mess.
+url: https://jfenn.me/pixularautomaton
 baseurl: "/"
 
 exclude:
