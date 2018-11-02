@@ -15,8 +15,8 @@ layout: default
 	</div>&nbsp;&nbsp;
 	<div style="display: inline-block;">
 		<h5 style="display: inline;">Pixelation</h5><br>
-		<input id="pixels" type="range" min="2" max="10" value="4">
-		<label id="pixelsNumber" for="pixels">4</label>
+		<input id="pixels" type="range" min="2" max="10" value="3">
+		<label id="pixelsNumber" for="pixels">3</label>
 	</div><br><br>
 	<canvas id="canvas" style="border: 1px solid #BDBDBD; width: calc(100% - 2px);"></canvas><br><br>
 	<div style="display: inline-block;">
@@ -55,7 +55,7 @@ layout: default
 	_canvasContext.webkitImageSmoothingEnabled = false;
 	_canvasContext.imageSmoothingEnabled = false;
 
-	var _pixelRatio = 4;
+	var _pixelRatio = 3;
 	var _granularity = 10;
 	var _deathType = "empty";
 	var _delay = 500;
@@ -125,8 +125,11 @@ layout: default
 
 	function scaleInputImage(imageData) {
 		_origImageData = [];
-		for (let i = 0; i < imageData.data.length; i += imageData.width * 4 * _pixelRatio * _pixelRatio) {
-			for (let i2 = i; i2 < i + (imageData.width * 4 * _pixelRatio); i2 += 4 * _pixelRatio) {
+		let width = Math.floor(imageData.width / _pixelRatio) * _pixelRatio;
+		//let length = Math.floor(width * imageData.height / _pixelRatio) * _pixelRatio;
+		
+		for (let i = 0; i < imageData.data.length; i += width * 4 * _pixelRatio * _pixelRatio) {
+			for (let i2 = i; i2 < i + (width * 4 * _pixelRatio); i2 += 4 * _pixelRatio) {
 				_origImageData.push(imageData.data[i2]);
 				_origImageData.push(imageData.data[i2+1]);
 				_origImageData.push(imageData.data[i2+2]);
